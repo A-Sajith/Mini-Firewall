@@ -1,28 +1,25 @@
-# mini-firewall
+# mini-fw
 
-Wrapper bash simplifié pour la gestion d'un pare-feu Linux avec **nftables**.
+Petit script bash pour gérer un pare-feu Linux (nftables) sans avoir à retenir toute la syntaxe à chaque fois.
 
-Permet de bloquer/débloquer des IP et des ports via des commandes simples, sans avoir à mémoriser la syntaxe complète de nftables.
+## Pourquoi ce projet
 
-## Contexte
+En recherche d'alternance Admin Sys / Réseaux, je voulais un projet concret pour pratiquer le filtrage réseau sous Linux plutôt que de juste lire de la théorie. nftables a une syntaxe assez lourde à taper à la main, donc j'ai fait un wrapper avec des commandes simples : bloquer une IP, la débloquer, voir les règles actives.
 
-Projet réalisé dans le cadre de ma recherche d'alternance en administration systèmes & réseaux, pour mettre en pratique la gestion du filtrage réseau sous Linux.
+## Comment ça marche
 
-## Fonctionnement
-
-Le script crée une table nftables (`mini_fw`) et une chaîne accrochée au hook `input` (trafic entrant), avec une politique par défaut `accept`. Les règles ajoutées bloquent explicitement le trafic indésirable (modèle blacklist).
+Le script crée une table nftables et une chaîne branchée sur le trafic entrant (`hook input`), avec une politique "accept" par défaut. On bloque ensuite explicitement ce qu'on ne veut pas laisser passer (une IP, un port).
 
 ```
-table (inet mini_fw)
- └── chaîne (input_filter, hook=input, policy=accept)
-      ├── règle : bloquer IP X
-      └── règle : bloquer port Y
+table mini_fw
+ └── chaîne input_filter (hook input, policy accept)
+      ├── règle : bloquer une IP
+      └── règle : bloquer un port
 ```
 
 ## Prérequis
 
-- Linux avec `nftables` installé
-- Droits root (le script manipule les règles du noyau)
+nftables doit être installé, et il faut être root pour manipuler les règles.
 
 ```bash
 sudo apt install nftables
@@ -31,61 +28,50 @@ sudo apt install nftables
 ## Installation
 
 ```bash
-git clone https://github.com/<ton-user>/mini-fw.git
-cd mini-fw
+git clone https://github.com/A-Sajith/Mini-Firewall.git
+cd Mini-Firewall
 chmod +x mini-fw.sh
 ```
 
 ## Utilisation
 
 ```bash
-# Initialise la table et la chaîne (à faire une seule fois)
-sudo ./mini-fw.sh init
-
-# Bloquer une IP
+sudo ./mini-fw.sh init                    # à faire une seule fois
 sudo ./mini-fw.sh block-ip 203.0.113.42
-
-# Débloquer une IP
 sudo ./mini-fw.sh unblock-ip 203.0.113.42
-
-# Afficher les règles actives
 sudo ./mini-fw.sh list
 ```
 
-## Exemple
+## Exemple concret
+
+Testé en bloquant 8.8.8.8 puis en vérifiant avec un ping que le trafic était bien coupé :
 
 ```bash
-$ sudo ./mini-fw.sh init
-Firewall initialisé.
-
 $ sudo ./mini-fw.sh block-ip 8.8.8.8
 IP 8.8.8.8 bloquée.
 
-$ sudo ./mini-fw.sh list
-table inet mini_fw {
-    chain input_filter {
-        type filter hook input priority filter; policy accept;
-        ip saddr 8.8.8.8 drop
-    }
-}
+$ ping -c 4 8.8.8.8
+4 packets transmitted, 0 received, 100% packet loss
 
 $ sudo ./mini-fw.sh unblock-ip 8.8.8.8
 IP 8.8.8.8 débloquée.
+
+$ ping -c 4 8.8.8.8
+4 packets transmitted, 4 received, 0% packet loss
 ```
 
-## Ce que le projet démontre
+## Ce que ça m'a fait travailler
 
-- Compréhension du fonctionnement de nftables (tables, chaînes, hooks, handles)
-- Filtrage de trafic réseau entrant par IP
-- Scripting bash (arguments, parsing de sortie avec `grep`/regex, gestion de cas)
-- Tests réels de blocage/déblocage (validés avec `ping`)
+- Le fonctionnement de nftables : tables, chaînes, hooks, handles
+- Le filtrage de trafic entrant par IP
+- Du scripting bash un peu plus poussé que d'habitude (parsing avec grep/regex pour retrouver le handle d'une règle avant de la supprimer)
 
-## Limites connues / améliorations possibles
+## À faire
 
-- Pas encore de gestion des ports (`block-port` / `unblock-port`)
-- Pas de sauvegarde/restauration de configuration
-- Pas de journalisation des tentatives bloquées
+- `block-port` / `unblock-port` (même logique que pour les IP, pas encore fait)
+- Sauvegarde/restauration de la config
+- Log des tentatives bloquées
 
 ## Auteur
 
-Sajith — étudiant en Master Réseaux, Systèmes et Cloud Computing (ESGI Paris), à la recherche d'une alternance Admin Sys & Réseaux / DevOps.
+Sajith, en Master Réseaux, Systèmes et Cloud Computing à l'ESGI, en recherche d'alternance Admin Sys & Réseaux / DevOps.

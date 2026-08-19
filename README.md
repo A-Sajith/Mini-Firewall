@@ -1,4 +1,4 @@
-# mini-fw
+# mini-firewall
 
 Petit script bash pour gérer un pare-feu Linux (nftables) sans avoir à retenir toute la syntaxe à chaque fois.
 

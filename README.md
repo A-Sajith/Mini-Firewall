@@ -1,4 +1,4 @@
-# mini-fw
+# mini-firewall
 
 Wrapper bash simplifié pour la gestion d'un pare-feu Linux avec **nftables**.
 
